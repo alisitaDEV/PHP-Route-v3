@@ -1,51 +1,62 @@
 <?php
-$routeFolder = '../app/routes/';
+$routeFolder  = FILEAPP . 'routes/';
+$route        = isset($urlParts[0]) ? $urlParts[0] : '';
+$parameter    = isset($urlParts[1]) ? $urlParts[1] : '';
 
-$route = isset($urlParts[0]) ? $urlParts[0] : '';
-$parameter = isset($urlParts[1]) ? $urlParts[1] : '';
-
-// Validasi karakter URL (hindari karakter berbahaya)
 if ((!empty($route) && !preg_match('/^[a-zA-Z0-9_-]+$/', $route)) ||
   (!empty($parameter) && !preg_match('/^[a-zA-Z0-9_-]+$/', $parameter))) {
   die('Invalid URL');
 }
 
-// Jika tidak ada route, arahkan ke home
-if ($route === '') {
-  $filePath = $routeFolder . 'home/index.php';
+ob_start();
+$title        = 'Halaman';
+
+$found        = false;
+
+if ($route  === '') {
+  $filePath   = $routeFolder . 'home/index.php';
   if (file_exists($filePath)) {
     include $filePath;
-    exit;
-  } else {
-    notFound();
+    $found    = true;
   }
-}
-
-// Coba akses sebagai folder/index.php → /page1 → routes/page1/index.php
-if (is_dir($routeFolder . $route)) {
-  $filePath = $routeFolder . $route . '/index.php';
-
-  // Jika ada subhalaman seperti /page1/sub1 → routes/page1/sub1.php
+} elseif (is_dir($routeFolder . $route)) {
   if (!empty($parameter)) {
-    $subFile = $routeFolder . $route . '/' . $parameter . '.php';
+    $subFile  = $routeFolder . $route . '/' . $parameter . '.php';
     if (file_exists($subFile)) {
       include $subFile;
-      exit;
+      $found  = true;
     }
   }
 
-  if (file_exists($filePath)) {
-    include $filePath;
-    exit;
+  if (!$found) {
+    $filePath = $routeFolder . $route . '/index.php';
+    if (file_exists($filePath)) {
+      include $filePath;
+      $found  = true;
+    }
+  }
+} else {
+  $directFile = $routeFolder . $route . '.php';
+  if (file_exists($directFile)) {
+    include $directFile;
+    $found    = true;
   }
 }
 
-// Coba akses langsung file php → /page2 → routes/page2.php
-$directFile = $routeFolder . $route . '.php';
-if (file_exists($directFile)) {
-  include $directFile;
-  exit;
+$content      = ob_get_clean();
+
+if (!$found) {
+  notFound();
 }
 
-// Tidak ditemukan
-notFound();
+$isSPA = isset($_GET['spa']) && $_GET['spa'] ? true : false;
+
+if ($isSPA) {
+  header('Content-Type: application/json');
+  echo json_encode([
+    'title' => $title,
+    'content' => $content
+  ]);
+} else {
+  include FILEAPP . 'templates/layout.php';
+}

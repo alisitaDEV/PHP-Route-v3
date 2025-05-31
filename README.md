@@ -1,2 +1,2 @@
-# PHP-Route-v2
-Simple PHP Routing versi 2 yang saya buat, menambahkan koneksi ke database
+# PHP-Route-v3
+Simple PHP Routing versi 3 yang saya buat, menambahkan ajax supaya interaksi jauh lebih cepat.
